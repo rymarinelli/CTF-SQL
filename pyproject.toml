@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "ctf-sql"
+version = "0.1.0"
+description = "Fork of FMZennaro/CTF-SQL that uses other methods to learn"
+authors = ["Ryan Marinelli"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+gymnasium = "^0.29.1"
+numpy = "^1.26.4"
+scipy = "^1.12.0"
+matplotlib = "^3.8.3"
+stable-baselines3 = {extras = ["extra"], version = "^2.2.1"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
