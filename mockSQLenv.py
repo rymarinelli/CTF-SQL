@@ -1,8 +1,12 @@
+import gymnasium as gym
+from gymnasium import spaces
+
+
 import numpy as np
 
 import const
 
-class mockSQLenv(object):
+class mockSQLenv(gym.Env):
 	"""
 	"""
 	def __init__(self,verbose=True, flag_reward = 10, query_reward = -1):
