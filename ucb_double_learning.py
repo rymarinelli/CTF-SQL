@@ -16,7 +16,6 @@ class UCBDoubleQLearning(UCBExplorationMixin, DoubleQLearningAgent):
         self.initialize_ucb(state_resp)  # Ensure the new state is initialized
         self.update_action_count(self.state, action)  # Update action count for UCB
 
-        self._n_step_update(action, state_resp, reward, termination)
         self.state = state_resp  # Update state
         self.terminated = termination
         if self.verbose:
