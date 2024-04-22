@@ -27,12 +27,20 @@
  
 \title{Extending Q-Learning Agents in SQLi Environments}
 
-\author{\IEEEauthorblockN{\textsuperscript{} Ryan Marinelli}
-\IEEEauthorblockA{\textit{Department of Informatics} \\
-\textit{University of Oslo}\\
-Oslo, Norway \\
-ryanma@ifi.uio.no}
+\author{
+    \IEEEauthorblockN{Ryan Marinelli}
+    \IEEEauthorblockA{\textit{Department of Informatics} \\
+    \textit{University of Oslo}\\
+    Oslo, Norway \\
+    ryanma@ifi.uio.no}
+    \and
+    \IEEEauthorblockN{Laszlo Erdődi}
+    \IEEEauthorblockA{\textit{Department of Informatics} \\
+    \textit{University of Oslo}\\
+    Oslo, Norway \\
+    laszloe@ifi.uio.no}
 }
+
 
 \maketitle
 
@@ -186,33 +194,25 @@ username=admin' UNION SELECT username, password FROM users-- &password=
 \end{enumerate}
 
 \section{The Environment}
+A Markov Decision Process is a framework for modeling Reinforcement agents. As largely described during the discussion of the  Bellman Equation, there are states, actions, transition functions, reward functions, and discount factors. The agent selects actions based on the reward and enters different states based on transition probability. The components of the MDP mutally interact to describe the dynamics of a particular system.
 
-\begin{tikzpicture}[>=Stealth,
-  block/.style={rectangle, draw, minimum width=2cm, minimum height=1cm},
-  line/.style={->, thick, >=latex}
-]
+\begin{tikzpicture}[shorten >=1pt,auto,node distance=3cm]
+    \node[rectangle, draw, minimum size=1cm] (agent) {Agent};
+    \node[rectangle, draw, below of=agent, minimum size=1cm] (environment) {Environment};
 
-% Nodes
-\node[block] (agent) {Agent};
-\node[block, below=2.5cm of agent] (environment) {Environment};
+    \draw[->] (agent.0) -- node {action $A_t$} ++(3cm,0) |- (environment.0);
+    \draw[->] (environment.190) -- node[below left] {state $S_{t+1}$} ++(-3cm,0) |- (agent.170);
+    \draw[<-] (environment) -- node {reward $R_{t}$} (agent);
 
-% Arrows 
-\draw[line] ([yshift=-5mm]agent.east) -- node[midway, above] {action \(A_t\)} ++(2,0) |- ([yshift=5mm]environment.east);
-\draw[line] ([yshift=5mm]environment.west) -- node[midway, above] {state \(S_{t+1}\)} ++(-2,0) |- ([yshift=-5mm]agent.west);
-
-\draw[line] (agent.west) -- node[midway, above] {reward \(R_t\)} ++(-2,0) |- (environment.west);
+    \draw[->,dashed] (environment.170) -- ++(-2cm,0) |- node[below right] {state $S_t$} (agent.190);
 
 \end{tikzpicture}
 
 
-\subsection{Authors and Affiliations}
-\textbf{The class file is designed for, but not limited to, six authors.} A 
-minimum of one author is required for all conference articles. Author names 
-should be listed starting from left to right and then moving down to the 
-next line. This is the author sequence that will be used in future citations 
-and by indexing services. Names should not be listed in columns nor group by 
-affiliation. Please keep your affiliations as succinct as possible (for 
-example, do not differentiate among departments of the same organization).
+\subsection{Model}
+In L. Erdődi et al, the complexity of SQL Injection was refined into a model to fit into an MDP formulation. One of the main points is the adoption of a Capture-The-Flag formulation. Often in cyber security settings, a flag, usually a string or hash, is hidden for the attack in training to find. By using this game like setting, Erdődi was able to define the environment. Additional constraints were imposed as well. In the environment, there should only be one vulnerable parameter, no input validation by the server side script. UNION will be allowed to match with columns, and that error messages will not be accessible by the attacker. 
+
+Within the consideration of the MDP, the set of states maps to the server. Since the web server in Erdődi et al is stateless; it is a singleton state. A reward function is used to guide agent. A +10 reward is awarded for finding the flag and a -1 reward is used as a disincentive. The action space is defined by attempting to determine the escape character and finding the columns to insert into for injection. The state space is defined by the action space. 
 
 \subsection{Identify the Headings}
 Headings, or heads, are organizational devices that guide the reader through 
