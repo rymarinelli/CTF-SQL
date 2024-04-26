@@ -4,6 +4,7 @@ from tqdm import tqdm
 import agent as agn
 import mockSQLenv as SQLenv
 import utilities as ut
+import matplotlib.pyplot as plt
 
 def run_simulation(title, agt,  n_simulations, n_episodes_training, flag_reward, query_reward, exploration_train, learningrate, discount, max_steps):
     # Initialize data arrays
@@ -42,5 +43,34 @@ def run_simulation(title, agt,  n_simulations, n_episodes_training, flag_reward,
     })
     df.to_csv(f'{title}_episode_means.csv', index=False)
 
+    def save_plots(title = title, mean_q_sizes = mean_q_sizes, 
+                   mean_rewards = mean_rewards, mean_steps = mean_steps):
+      plt.figure(figsize=(10, 5))
+      plt.plot(mean_q_sizes, label='Average Exploration per Episode')
+      plt.xlabel('Episode')
+      plt.ylabel('Exploration')
+      plt.title('Learning Progression: Exploration per Episode')
+      plt.legend()
+      plt.savefig(f'{title}_Average_Exploration_per_Episode.png')  # Save the figure
+   
 
-    return train_data
+    # Plot for average rewards per episode
+      plt.figure(figsize=(10, 5))
+      plt.plot(mean_rewards, label='Average Reward per Episode')
+      plt.xlabel('Episode')
+      plt.ylabel('Rewards')
+      plt.title('Learning Progression: Rewards per Episode')
+      plt.legend()
+      plt.savefig(f'{title}_Average_Reward_per_Episode.png')  # Save the figure
+    
+
+    # Plot for average steps per episode
+      plt.figure(figsize=(10, 5))
+      plt.plot(mean_steps, label='Average Steps per Episode')
+      plt.xlabel('Episode')
+      plt.ylabel('Steps')
+      plt.title('Learning Progression: Steps per Episode')
+      plt.legend()
+      plt.savefig(f'{title}_Average_Steps_per_Episode.png')  # Save the figure
+
+      save_plots()
