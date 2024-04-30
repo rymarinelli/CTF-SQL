@@ -5,7 +5,8 @@ import agent as agn
 import mockSQLenv as SQLenv
 import utilities as ut
 import matplotlib.pyplot as plt
-
+import pandas as pd 
+import const
 def run_simulation(title, agt,  n_simulations, n_episodes_training, flag_reward, query_reward, exploration_train, learningrate, discount, max_steps):
     # Initialize data arrays
     train_data = np.zeros((n_simulations, 3, n_episodes_training))
@@ -73,4 +74,4 @@ def run_simulation(title, agt,  n_simulations, n_episodes_training, flag_reward,
       plt.legend()
       plt.savefig(f'{title}_Average_Steps_per_Episode.png')  # Save the figure
 
-      save_plots()
+    save_plots()

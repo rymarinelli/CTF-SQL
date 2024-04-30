@@ -1,3 +1,5 @@
+from ucb_exploration_mixin import UCBExplorationMixin
+from agent import Agent
 class UCBAgent(UCBExplorationMixin, Agent):
     def __init__(self, actions, verbose=True, c=1.0):
         Agent.__init__(self, actions, verbose)
