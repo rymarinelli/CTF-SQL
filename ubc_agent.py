@@ -16,7 +16,7 @@ class UCBAgent(UCBExplorationMixin, Agent):
             # Call the base Agent class's _select_action if not learning
             return Agent._select_action(self, learning=False)
 
-    def step(self, deterministic=False):
-        action = self._select_action(learning=not deterministic)
-        state_resp, reward, termination, debug_msg = self.env.step(action)
-        self.rewards += reward
+    #def step(self, deterministic=False):
+    #    action = self._select_action(learning=not deterministic)
+    #    state_resp, reward, termination, debug_msg = self.env.step(action)
+    #    self.rewards += reward
