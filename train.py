@@ -1,20 +1,20 @@
 import pickle
 import numpy as np
 from tqdm import tqdm
-import agent as agn
+#import agent as agn
 import mockSQLenv as SQLenv
 import utilities as ut
 import matplotlib.pyplot as plt
 import pandas as pd 
 import const
-def run_simulation(title, agt,  n_simulations, n_episodes_training, flag_reward, query_reward, exploration_train, learningrate, discount, max_steps):
+def run_simulation(title, agent_class,  n_simulations, n_episodes_training, flag_reward, query_reward, exploration_train, learningrate, discount, max_steps):
     # Initialize data arrays
     train_data = np.zeros((n_simulations, 3, n_episodes_training))
 
 
     # Simulation loop
     for i in tqdm(range(n_simulations)):
-        agt = agn.Agent(const.actions, verbose=False)
+        agt = agent_class(const.actions, verbose=False)
         agt.set_learning_options(exploration=exploration_train, learningrate=learningrate, discount=discount, max_step=max_steps)
 
         # Training loop
