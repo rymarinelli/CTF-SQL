@@ -33,7 +33,6 @@ class Agent:
 
     def _select_action(self, learning=True):
         if np.random.random() < self.expl and learning:
-            print("This is the wrong_select_action")
             return np.random.randint(3, self.num_actions)
         else:
             return np.argmax(self.Q[self.state])
