@@ -42,9 +42,9 @@ def run_simulation(title, agent_class, n_simulations, n_episodes_training, flag_
         for i, future in enumerate(tqdm(concurrent.futures.as_completed(futures), total=n_simulations)):
             train_data[i] = future.result()
 
-    # Save data to file
+    # Save agent
     with open(f'{title}.pkl', 'wb') as file:
-        pickle.dump(train_data, file)
+        pickle.dump(agt, file)
 
     # Calculate and store summary statistics
     mean_steps = np.mean(train_data[:, 0, :], axis=0)
