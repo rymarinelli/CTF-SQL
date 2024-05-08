@@ -7,7 +7,6 @@ class DoubleQLearningAgent(Agent):
     def __init__(self, actions, verbose=True):
         super().__init__(actions, verbose)  
         self.Q2 = {(): np.ones(len(actions))}  
-        self.exploration_rate = 0.2
 
     def _select_action(self, learning=True):
         if np.random.random() < self.exploration_rate and learning:
