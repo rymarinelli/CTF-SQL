@@ -1,10 +1,17 @@
-import numpy as np  # Ensure numpy is imported for array and mathematical operations
+import numpy as np  
 
-# First, define the mixin that UCBAgent depends on
 class UCBExplorationMixin:
     def __init__(self, c=1.0):
-        self.c = c  # Exploration parameter for UCB
-        self.action_counts = {}  # Dictionary to store action counts per state
+     """
+        Parameters
+        ----------
+        c : float
+            Exploration parameter for UCB
+        action_count : dict
+             Dictionary to store action counts per state
+         """
+        self.c = c  
+        self.action_counts = {}  
 
     def initialize_ucb(self, state):
         if state not in self.action_counts:
