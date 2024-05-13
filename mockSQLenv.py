@@ -1,75 +1,111 @@
+import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
-
-
-import numpy as np
-
 import const
 
 class mockSQLenv(gym.Env):
-	"""
-	"""
-	def __init__(self,verbose=True, flag_reward = 10, query_reward = -1):
-		# Get the action space
-		self.A = np.array(const.actions)
-		self.query_reward = query_reward
-		self.flag_reward = flag_reward
+    """
+    A mock SQL environment simulating SQL injection vulnerability testing.
+    
+    Attributes:
+        verbose (bool): If true, enables verbose output.
+        A (np.array): Array of possible actions.
+        query_reward (float): Reward for a non-terminal action.
+        flag_reward (float): Reward for terminal action (capturing the flag).
+        action_space (gym.spaces): Space of possible actions.
+        observation_space (gym.spaces): Space of possible states/observations.
+        state (np.array): Current state of the environment.
+    """
+    metadata = {'render_modes': ['human']}
 
-		# Random integers to setup the server
-		r = np.random.randint(3)
-		f = np.random.randint(5)
-		self.flag_cols = f
+    def __init__(self, verbose=True, flag_reward=10, query_reward=-1):
+        super(mockSQLenv, self).__init__()
+        self.verbose = verbose
+        self.A = np.array(const.actions)  # Array of possible actions
+        self.query_reward = query_reward
+        self.flag_reward = flag_reward
 
-		# The random setup contains the correct escape sequences and the correct SQL injection
-		self.setup = [0+r*17, 1+r*17,(12+f)+r*17]
+        # Define the action space (number of discrete actions)
+        self.action_space = spaces.Discrete(len(self.A))
 
-		# Get the set of actions that are syntactically correct
-		self.syntaxmin = 0+r*17
-		self.syntaxmax = 17+r*17
+        # Define the observation space (example: 10 continuous features)
+        num_features = 10
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(num_features,), dtype=np.float32)
 
-		self.termination = False
-		self.verbose = verbose
-		if(self.verbose): print('Game setup with a random query')
+        # Initialize the state of the environment
+        self.state = None
+        self.reset()
 
+        if self.verbose:
+            print('Game setup with a random query')
 
-	def step(self,action_number=None,action_string=None):
-		# step() expects a correct action number or a correct action string. No checks in place
+    def step(self, action):
+        """Simulates taking an action in the environment.
 
-		# If given a string find out the action number
-		if (action_number==None):
-			print("action_number)",action_number)
-			action_number = np.where(self.A==action_string)[0][0]
-		if(self.verbose): print('I received action {0}: {1}'.format(action_number, self.A[action_number]))
+        Args:
+            action (int): The action to take.
 
-		# Process action
-		if (action_number==self.setup[0]):
-			if(self.verbose): print('Correct exploratory action for the escape. I return 1')
-			return 1,self.query_reward,self.termination,'Server response is 1'
-		elif (action_number==self.setup[1]):
-			if(self.verbose): print('Correct exploratory action for the escape. I return 2')
-			return 2,self.query_reward,self.termination,'Server response is 2'
-		elif (action_number==self.setup[2]):
-			if(self.verbose): print('Flag captured. I return 3')
-			self.termination = True
-			return 3,self.flag_reward,self.termination,'Server response is 3'
-		elif (action_number >= self.syntaxmin and action_number < self.syntaxmax):
-			if(action_number == self.flag_cols*2 + self.setup[1] + 1 or action_number == self.flag_cols*2 + self.setup[1] + 2):
-				if(self.verbose): print('Query with correct number of rows')
-				return 4,self.query_reward, self.termination, "Server response is 4"
+        Returns:
+            tuple: Tuple containing the new state, reward, done flag, and info dictionary.
+        """
+        assert self.action_space.contains(action), "Action out of bounds"
 
-			if(self.verbose): print('Query has the correct escape, but contains the wrong number of rows. I return 0')
-			return 0,self.query_reward, self.termination,'Server response is 0'
-		else:
-			if(self.verbose): print('Query is syntactically wrong. I return -1')
-			return -1,self.query_reward, self.termination,'Server response is -1'
+        # Perform action and update state
+        reward, done, truncated,  info = self.perform_action(action)
+        self.state = np.random.normal(size=self.observation_space.shape).astype(np.float32)
+        truncated = False
+        return self.state, reward, done,truncated,  info
 
+    def reset(self, **kwargs):
+        """Resets the environment to an initial state.
 
-	def reset(self):
-		self.termination = False
-		if(self.verbose): print('Game reset (but not reinitialized with a new random query!)')
-		return None,0,self.termination,'Game reset'
+        Args:
+            **kwargs: Optional arguments, can include 'seed' for random seed setting.
 
-	def reveal_solution(self):
-		#For debugging only
-		print('Correct escapes are: \n [{0}]: {1} \n [{2}]: {3}'.format(self.setup[0],self.A[self.setup[0]],self.setup[1],self.A[self.setup[1]]))
-		print('Correct SQL injection is: \n [{0}]: {1}'.format(self.setup[2],self.A[self.setup[2]]))
+        Returns:
+            tuple: The initial state and an empty info dictionary.
+        """
+        seed = kwargs.get('seed')
+        if seed is not None:
+            np.random.seed(seed)
+
+        self.termination = False
+        self.setup_random_game()
+        self.state = np.random.normal(size=self.observation_space.shape).astype(np.float32)
+        return self.state, {}
+
+    def perform_action(self, action):
+        """Determines the result of the action taken.
+
+        Args:
+            action (int): Action taken.
+
+        Returns:
+            tuple: Reward for the action, whether it's terminal, and an info dictionary.
+        """
+        if action == self.setup[2]:
+            reward = self.flag_reward
+            done = True
+            truncated = False
+            info = {'message': 'Flag captured'}
+        else:
+            reward = self.query_reward
+            done = False
+            info = {}
+            truncated = False    
+        return reward, done, truncated,  info
+
+    def setup_random_game(self):
+        """Sets up or resets the game randomly."""
+        r = np.random.randint(3)
+        f = np.random.randint(5)
+        self.flag_cols = f
+        self.setup = [0 + r * 17, 1 + r * 17, (12 + f) + r * 17]
+        self.syntaxmin = 0 + r * 17
+        self.syntaxmax = 17 + r * 17
+
+    def render(self, mode='human', close=False):
+        """Renders the environment. Currently, no rendering is implemented."""
+        if self.verbose:
+            print("Rendering the game... (not implemented)")
+
