@@ -1,102 +1,82 @@
-import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
+import numpy as np
 import const
 
 class mockSQLenv(gym.Env):
     """
-    A mock SQL environment simulating SQL injection vulnerability testing.
-    
+
     Attributes:
-        verbose (bool): If true, enables verbose output.
-        A (np.array): Array of possible actions.
-        query_reward (float): Reward for a non-terminal action.
-        flag_reward (float): Reward for terminal action (capturing the flag).
-        action_space (gym.spaces): Space of possible actions.
-        observation_space (gym.spaces): Space of possible states/observations.
-        state (np.array): Current state of the environment.
+        verbose (bool): If true, prints additional output to console.
+        query_reward (float): Reward given for a non-terminal action.
+        flag_reward (float): Reward given for a terminal action, i.e., successfully exploiting the vulnerability.
+        action_space (gym.spaces): Space of possible actions, defined as discrete steps.
+        observation_space (gym.spaces): Space of possible states/observations, defined discretely.
+        state (int): Current state of the environment, used to simulate the environment's response.
     """
-    metadata = {'render_modes': ['human']}
 
     def __init__(self, verbose=True, flag_reward=10, query_reward=-1):
+        """
+        Initializes a new instance of the mockSQLenv class.
+
+        Parameters:
+            verbose (bool): Enables detailed logging.
+            flag_reward (float): The reward for capturing the flag.
+            query_reward (float): The reward for other actions.
+        """
         super(mockSQLenv, self).__init__()
         self.verbose = verbose
-        self.A = np.array(const.actions)  # Array of possible actions
         self.query_reward = query_reward
         self.flag_reward = flag_reward
+        self.action_space = spaces.Discrete(len(const.actions))
+        self.observation_space = spaces.Discrete(5)
 
-        # Define the action space (number of discrete actions)
-        self.action_space = spaces.Discrete(len(self.A))
-
-        # Define the observation space (example: 10 continuous features)
-        num_features = 10
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(num_features,), dtype=np.float32)
-
-        # Initialize the state of the environment
-        self.state = None
-        self.reset()
-
-        if self.verbose:
-            print('Game setup with a random query')
+        self.state = 0
+        self.setup_environment()
 
     def step(self, action):
-        """Simulates taking an action in the environment.
+        """
+        Executes one time step within the environment with the given action.
 
-        Args:
-            action (int): The action to take.
+        Parameters:
+            action (int): The action to be executed.
 
         Returns:
-            tuple: Tuple containing the new state, reward, done flag, and info dictionary.
+            tuple: Contains the new state, reward, whether the action terminated the episode,
+                   whether the action was truncated, and additional info.
         """
-        assert self.action_space.contains(action), "Action out of bounds"
+        assert self.action_space.contains(action), "Invalid action"
+        if self.verbose:
+            print('Received action {}: {}'.format(action, const.actions[action]))
 
-        # Perform action and update state
-        reward, done, truncated,  info = self.perform_action(action)
-        self.state = np.random.normal(size=self.observation_space.shape).astype(np.float32)
-        truncated = False
-        return self.state, reward, done,truncated,  info
+        reward, terminated, truncated, response = self.perform_action(action)
+        self.state = (self.state + 1) % self.observation_space.n
+        info = {'response': response}
+        return self.state, reward, terminated, truncated, info
 
     def reset(self, **kwargs):
-        """Resets the environment to an initial state.
+        """
+        Resets the environment to an initial state.
 
-        Args:
-            **kwargs: Optional arguments, can include 'seed' for random seed setting.
+        Parameters:
+            kwargs: May contain 'seed' for setting the random seed.
 
         Returns:
-            tuple: The initial state and an empty info dictionary.
+            tuple: The initial state of the environment and an empty info dictionary.
         """
         seed = kwargs.get('seed')
         if seed is not None:
             np.random.seed(seed)
-
-        self.termination = False
-        self.setup_random_game()
-        self.state = np.random.normal(size=self.observation_space.shape).astype(np.float32)
+        self.state = 0
+        self.setup_environment()
+        if self.verbose:
+            print('Game reset with a new random query')
         return self.state, {}
 
-    def perform_action(self, action):
-        """Determines the result of the action taken.
-
-        Args:
-            action (int): Action taken.
-
-        Returns:
-            tuple: Reward for the action, whether it's terminal, and an info dictionary.
+    def setup_environment(self):
         """
-        if action == self.setup[2]:
-            reward = self.flag_reward
-            done = True
-            truncated = False
-            info = {'message': 'Flag captured'}
-        else:
-            reward = self.query_reward
-            done = False
-            info = {}
-            truncated = False    
-        return reward, done, truncated,  info
-
-    def setup_random_game(self):
-        """Sets up or resets the game randomly."""
+        Randomly sets up the game conditions to simulate different scenarios for each reset.
+        """
         r = np.random.randint(3)
         f = np.random.randint(5)
         self.flag_cols = f
@@ -104,8 +84,42 @@ class mockSQLenv(gym.Env):
         self.syntaxmin = 0 + r * 17
         self.syntaxmax = 17 + r * 17
 
-    def render(self, mode='human', close=False):
-        """Renders the environment. Currently, no rendering is implemented."""
-        if self.verbose:
-            print("Rendering the game... (not implemented)")
+    def perform_action(self, action_number):
+        """
+        Determines the result of an action.
+
+        Parameters:
+            action_number (int): Index of the action taken.
+
+        Returns:
+            tuple: The reward, whether the action terminated the episode,
+                   whether the action was truncated, and a response string.
+        """
+        if action_number == self.setup[2]:
+            if self.verbose:
+                print('Flag captured. I return 3')
+            return self.flag_reward, True, False, 'Server response is 3'
+        elif action_number in [self.setup[0], self.setup[1]]:
+            return self.query_reward, False, False, f'Correct exploratory action. Server response is {action_number - self.setup[0] + 1}'
+        elif self.syntaxmin <= action_number < self.syntaxmax:
+            return self.query_reward, False, False, 'Syntactically correct but incorrect action'
+        else:
+            return self.query_reward, False, False, 'Syntactically incorrect action'
+
+    def render(self, mode='human'):
+        """
+        Renders the current state of the environment.
+
+        Parameters:
+            mode (str): The mode to render with. Might try printing tables at some point/ 
+        """
+        if mode == 'human':
+            print(f'Current state: {self.state}')
+
+    def reveal_solution(self):
+        """
+        Prints the correct actions for SQL injection, intended for debugging and educational purposes.
+        """
+        print('Correct escapes are: \n [{0}]: {1} \n [{2}]: {3}'.format(self.setup[0], const.actions[self.setup[0]], self.setup[1], const.actions[self.setup[1]]))
+        print('Correct SQL injection is: \n [{0}]: {1}'.format(self.setup[2], const.actions[self.setup[2]]))
 
